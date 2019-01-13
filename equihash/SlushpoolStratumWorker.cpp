@@ -227,7 +227,7 @@ public:
                     work->_poolNonce = _worker._poolNonce;
 
                     if(auto clean = aParams[8]){
-                        if (!clean->GetBoolValue()){
+                        if (clean->GetBoolValue()){
                             BeamWork::sNonce = GenRandomU64();
                         }
                     }
