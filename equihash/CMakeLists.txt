@@ -8,6 +8,8 @@ set(SOURCES
     equihash-miner.cpp
     EquihashStratumWorker.cpp
     EquihashStratumWorker.hpp
+    SlushpoolStratumWorker.cpp
+    SlushpoolStratumWorker.hpp
     pch.cpp
     pch.hpp
     Solver.hpp
