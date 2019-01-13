@@ -22,6 +22,7 @@ public:
 	{
         std::stringstream json;
         json << "{\"method\":\"mining.authorize\", \"params\":[\"" << _apiKey << "\",\"\"], \"id\":" << _id << ",\"jsonrpc\":\"2.0\"}" << std::endl;
+        aBuffer = json.str();
     }
 
     void OnTimeout() override
@@ -104,13 +105,13 @@ protected:
 	std::string			_apiKey;
 };
 
-class SolutionCall : public core::StratumWorker::Call
+class SubmitCall : public core::StratumWorker::Call
 {
 public:
-	SolutionCall(core::StratumWorker &aWorker, const std::string &aApiKey, core::Solution::Ref aSolution) 
+	SubmitCall(core::StratumWorker &aWorker, const std::string &aApiKey, core::Solution::Ref aSolution) 
         : _worker(aWorker), _solution(aSolution), _apiKey(aApiKey)
 	{
-		_id = _worker.CreateCallId();
+		_id = std::to_string(_worker.CreateCallId());
 		_name = "mining.submit";
 	}
 
@@ -155,7 +156,7 @@ public:
 	{
 		std::string nonce, solStr("");
 		_solution->PrintNonce(nonce, false);
-		_solution->PrintSolution(aBuffer);
+		_solution->PrintSolution(solStr);
 
 
     	std::stringstream json;
@@ -163,6 +164,7 @@ public:
 			<< "\"" << solStr << "\", \"0000\", \"" << nonce << "\"], \"id\": " << _id << ", "
 			<< "\"method\": \"mining.submit\",\"jsonrpc\":\"2.0\"}" << std::endl;
 
+        aBuffer = json.str();
 		LOG(Info) << "Submitting solution for job #" << _id << " with nonce " << nonce;
 	}
 
@@ -186,6 +188,7 @@ public:
         if (aParams.IsArray() && aParams.GetArrayLen() > 0){
             auto difficulty = aParams[(unsigned int)0];
             static_cast<SlushpoolStratumWorker&>(_worker)._powDiff = beam::Difficulty(difficulty->GetULongValue());
+            LOG(Info) << "set difficulty to: " << static_cast<SlushpoolStratumWorker&>(_worker)._powDiff.ToFloat();
         }
 
 		return true;
@@ -201,35 +204,37 @@ protected:
 };
 
 
-class JobNotify : public core::StratumWorker::Call
+class PoolJobNotify : public core::StratumWorker::Call
 {
 public:
-	JobNotify(core::StratumWorker &aWorker) : _worker(aWorker)
+	PoolJobNotify(core::StratumWorker &aWorker) : _worker(aWorker)
 	{
 		_name = "mining.notify";
 	}
 
 	bool OnCall(const JSonVar &aParams) override
 	{
+            LOG(Debug) << "new work";
         if (aParams.IsArray() && aParams.GetArrayLen() >= 9){
+            LOG(Debug) << "parse params";
             if (BeamWork::Ref work = new BeamWork()) {
-                if (auto id = aParams[(unsigned int)0]) {
-                    work->_id = id->GetValue();
-                    if (auto input = aParams[2]) {
-                        work->_input.Import(input->GetValue(), true);
-                        work->_powDiff = static_cast<SlushpoolStratumWorker&>(_worker)._powDiff;
-                        work->_poolNonce = _worker._poolNonce;
+                auto id = aParams[(unsigned int)0];
+                work->_id = id->GetValue();
+        LOG(Debug) << "get work id" << work->_id;
+                if (auto input = aParams[2]) {
+                    work->_input.Import(input->GetValue(), true);
+                    work->_powDiff = static_cast<SlushpoolStratumWorker&>(_worker)._powDiff;
+                    work->_poolNonce = _worker._poolNonce;
 
-                        if(auto clean = aParams[8]){
-                            if (!clean->GetBoolValue()){
-                                BeamWork::sNonce = GenRandomU64();
-                            }
+                    if(auto clean = aParams[8]){
+                        if (!clean->GetBoolValue()){
+                            BeamWork::sNonce = GenRandomU64();
                         }
-
-                        LOG(Info) << "New job #" << work->_id << " at difficulty " << work->_powDiff.ToFloat();
-                        _worker.SetWork(*work);
-                        return true;
                     }
+
+                    LOG(Info) << "New job #" << work->_id << " at difficulty " << work->_powDiff.ToFloat();
+                    _worker.SetWork(*work);
+                    return true;
                 }
             }
         }
@@ -248,7 +253,7 @@ protected:
 
 SlushpoolStratumWorker::SlushpoolStratumWorker(const std::string &aApiKey) : _apiKey(aApiKey)
 {
-	Register(new JobNotify(*this));
+	Register(new PoolJobNotify(*this));
 	Register(new DifficultyNotify(*this));
 }
 
@@ -264,5 +269,10 @@ bool SlushpoolStratumWorker::OnConnected()
 	_connectedCounter++;
 	RemoteCall(new SubscribeCall(*this, _apiKey));
 	return true;
+}
+
+void SlushpoolStratumWorker::PostSolution(core::Solution::Ref aSolution) const
+{
+	const_cast<SlushpoolStratumWorker*>(this)->RemoteCall(new SubmitCall(*const_cast<SlushpoolStratumWorker*>(this), _apiKey, aSolution));
 }
 
