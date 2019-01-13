@@ -301,7 +301,7 @@ bool StratumWorker::ReadJson(JSonVar &aReply)
 		while (!_exit) {
 			int result = _transport->GetLine(_buffer, 5 * 60 * 1000);
 			if (0 == result) {
-				LOG(Trace) << _buffer;
+				LOG(Debug) << _buffer;
 				return JSonVar::ParseJSon(_buffer.c_str(), aReply);
 			}
 			else {
