@@ -9,7 +9,48 @@
 #include "core/TcpAsyncTransport.hpp"
 #include "base/Utils.hpp"
 
-class AuthorizeCall;
+class AuthorizeCall : public core::StratumWorker::Call
+{
+public:
+    AuthorizeCall(core::StratumWorker &aWorker, const std::string &aApiKey) : _worker(aWorker), _apiKey(aApiKey)
+    {
+		_id = std::to_string(_worker.CreateCallId());
+		_name = "mining.authorize";
+    }
+
+	void Serialize(std::string &aBuffer) const override
+	{
+        std::stringstream json;
+        json << "{\"method\":\"mining.authorize\", \"params\":[\"" << _apiKey << "\",\"\"], \"id\":" << _id << ",\"jsonrpc\":\"2.0\"}" << std::endl;
+    }
+
+    void OnTimeout() override
+	{
+	}
+
+	bool HasResult() const override
+	{
+		return true;
+	}
+
+    bool OnResult(const JSonVar &aResult) override
+	{
+        if (auto error = aResult[core::StratumWorker::kError]) {
+			if (error->IsNull()) {
+				if (auto result = aResult[core::StratumWorker::kResult]) {
+                    return result->GetBoolValue();
+                }
+            }
+        }
+
+        return false;
+    }
+
+protected:
+	core::StratumWorker	&_worker;
+	std::string			_apiKey;
+};
+
 
 class SubscribeCall : public core::StratumWorker::Call
 {
@@ -57,48 +98,6 @@ public:
 
         aBuffer = json.str();
 	}
-
-protected:
-	core::StratumWorker	&_worker;
-	std::string			_apiKey;
-};
-
-class AuthorizeCall : public core::StratumWorker::Call
-{
-public:
-    AuthorizeCall(core::StratumWorker &aWorker, const std::string &aApiKey) : _worker(aWorker), _apiKey(aApiKey)
-    {
-		_id = std::to_string(_worker.CreateCallId());
-		_name = "mining.authorize";
-    }
-
-	void Serialize(std::string &aBuffer) const override
-	{
-        std::stringstream json;
-        json << "{\"method\":\"mining.authorize\", \"params\":[\"" << _apiKey << "\",\"\"], \"id\":" << _id << ",\"jsonrpc\":\"2.0\"}" << std::endl;
-    }
-
-    void OnTimeout() override
-	{
-	}
-
-	bool HasResult() const override
-	{
-		return true;
-	}
-
-    bool OnResult(const JSonVar &aResult) override
-	{
-        if (auto error = aResult[core::StratumWorker::kError]) {
-			if (error->IsNull()) {
-				if (auto result = aResult[core::StratumWorker::kResult]) {
-                    return result->GetBoolValue();
-                }
-            }
-        }
-
-        return false;
-    }
 
 protected:
 	core::StratumWorker	&_worker;

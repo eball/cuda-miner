@@ -1,6 +1,7 @@
 #pragma	once
 
 #include "core/StratumWorker.hpp"
+#include "core/difficulty.h"
 
 class SlushpoolStratumWorker : public core::StratumWorker
 {

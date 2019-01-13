@@ -7,6 +7,7 @@
 #include "core/Service.hpp"
 #include "EquihashFarm.hpp"
 #include "EquihashStratumWorker.hpp"
+#include "SlushpoolStratumWorker.hpp"
 #if USE_OPENCL
 #include "cl/EquihashClMiner.hpp"
 #endif
