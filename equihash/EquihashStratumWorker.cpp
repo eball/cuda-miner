@@ -23,6 +23,15 @@ public:
 			if (error->IsNull()) {
 				if (auto result = aResult[core::StratumWorker::kResult]) {
 					result->GetBoolValue();
+					
+					if (result){
+						if (auto prefix = aResult[core::StratumWorker::kNoncePrefix]) {
+							_worker.SetPoolNonce(prefix->GetValue());
+						}else{
+							_worker.ClearPoolNonce();
+						}
+					}
+
 				}
 			}
 		}
@@ -100,6 +109,7 @@ public:
 					work->_input.Import(input->GetValue(), true);
 					if (auto difficulty = aCall[kDifficulty]) {
 						work->_powDiff = beam::Difficulty(difficulty->GetULongValue());
+						work->_poolNonce = _worker._poolNonce;
 						LOG(Info) << "New job #" << work->_id << " at difficulty " << work->_powDiff.ToFloat();
 						_worker.SetWork(*work);
 						return true;

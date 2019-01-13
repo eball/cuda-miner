@@ -22,11 +22,13 @@ public:
 	virtual const unsigned char * GetData() const;
 	virtual uint32_t GetDataSize() const;
 
-protected:
+public:
 	static std::atomic<uint64_t> sNonce;
 
 public:
 	beam::Difficulty	_powDiff;
 	uint64_t			_nonce;
 	BigInteger			_input;
+	std::vector<uint8_t> _poolNonce;
+
 };

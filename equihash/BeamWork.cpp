@@ -50,6 +50,16 @@ core::Work::Ref BeamWork::CreateForThread(uint32_t aThreadId) const
 {
 	if (BeamWork::Ref work = new BeamWork(*this)) {
 		work->_nonce = sNonce++;
+		
+		uint8_t* noncePoint = (uint8_t*) &work->_nonce;
+
+		uint32_t poolNonceBytes = std::min<uint32_t>(_poolNonce.size(), 6); 	// Need some range left for miner
+		work->_nonce = (work->_nonce << 8*poolNonceBytes);
+
+		for (uint32_t i=0; i<poolNonceBytes; i++) {			// Prefix pool nonce
+			noncePoint[i] = _poolNonce[i];
+		}
+
 		return work.get();
 	}
 	return core::Work::Ref();
@@ -58,6 +68,15 @@ core::Work::Ref BeamWork::CreateForThread(uint32_t aThreadId) const
 void BeamWork::Increment(unsigned aCount)
 {
 	_nonce = sNonce++;
+	uint8_t* noncePoint = (uint8_t*) &_nonce;
+
+	uint32_t poolNonceBytes = std::min<uint32_t>(_poolNonce.size(), 6); 	// Need some range left for miner
+	_nonce = (_nonce << 8*poolNonceBytes);
+
+	for (uint32_t i=0; i<poolNonceBytes; i++) {			// Prefix pool nonce
+		noncePoint[i] = _poolNonce[i];
+	}
+
 }
 
 unsigned char * BeamWork::GetData()

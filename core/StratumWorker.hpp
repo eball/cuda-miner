@@ -53,6 +53,10 @@ namespace core
 
 		virtual bool RemoteCall(Call::Ref aMethod);
 
+		virtual void SetPoolNonce(const std::string& nonceStr);
+
+		virtual void ClearPoolNonce();
+
 	protected:
 		bool OnCreateTransport() override;
 		bool OnDisconnected() override;
@@ -72,6 +76,9 @@ namespace core
 		static const std::string	kMethod;
 		static const std::string	kParams;
 		static const std::string	kResult;
+		static const std::string	kNoncePrefix;
+
+		std::vector<uint8_t> _poolNonce;
 
 	protected:
 		StaticSignal		_eventSync;

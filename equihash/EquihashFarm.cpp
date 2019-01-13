@@ -178,10 +178,13 @@ bool EquihashFarm::Init(int argc, char **argv)
 	std::string port;
 	std::string key;
 	std::string allowedDevices;
+	bool slushPoolProtocal = false;
 
 	for (CommandLineReader cmd(argc, argv); cmd.hasToken(); cmd.pop()) {
 		if (cmd.isLongOption()) {
-			if (cmd.getName() == "--server") {
+			if (cmd.getName() == "--server" || cmd.getName() == "--pool") {
+				slushPoolProtocal = (cmd.getName() == "--pool");
+
 				std::string value;
 				if (cmd.hashValue()) {
 					cmd.getValue().toString(value);
@@ -378,7 +381,11 @@ bool EquihashFarm::Init(int argc, char **argv)
 		LOG(Info) << "No API started";
 	}
 
-	_worker = new EquihashStratumWorker(key);
+	if (slushPoolProtocal){
+		_worker = new SlushpoolStratumWorker(key);
+	}else{
+		_worker = new EquihashStratumWorker(key);
+	}
 	if (!_worker) {
 		LOG(Fatal) << "Create worker error.";
 		return false;
@@ -399,6 +406,7 @@ bool EquihashFarm::Init(int argc, char **argv)
 	else {
 		_worker->SetPort(port);
 	}
+
 #if USE_CUDA
 	if (_useNvidia) {
 		core::CudaMiner::CudaDevice::List cudaDevices;

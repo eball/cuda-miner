@@ -7,6 +7,20 @@
 
 using namespace core;
 
+static std::vector<uint8_t> parseHex (std::string input) {
+	std::vector<uint8_t> result ;
+	result.reserve(input.length() / 2);
+	for (uint32_t i = 0; i < input.length(); i += 2){
+		uint32_t byte;
+		std::istringstream hex_byte(input.substr(i, 2));
+		hex_byte >> std::hex >> byte;
+		result.push_back(static_cast<unsigned char>(byte));
+	}
+	return result;
+}
+
+
+
 const std::string & StratumWorker::Call::GetId() const
 {
 	return _id;
@@ -52,6 +66,7 @@ const std::string StratumWorker::kId("id");
 const std::string StratumWorker::kMethod("method");
 const std::string StratumWorker::kParams("params");
 const std::string StratumWorker::kResult("result");
+const std::string StratumWorker::kNoncePrefix("nonceprefix");
 
 StratumWorker::StratumWorker()
 	: _callId(0)
@@ -222,6 +237,15 @@ void StratumWorker::Sender()
 	}
 }
 
+void StratumWorker::SetPoolNonce(const std::string& nonceStr){
+	_poolNonce = parseHex(nonceStr);
+}
+
+void StratumWorker::ClearPoolNonce(){
+	_poolNonce.clear();
+}
+
+
 bool StratumWorker::RemoteCall(Call::Ref aCall)
 {
 	std::unique_lock<std::mutex> lock(_csOutput);
@@ -354,4 +378,5 @@ long StratumWorker::CreateCallId()
 {
 	return _callId++;
 }
+
 
