@@ -41,6 +41,12 @@ public:
 				if (auto result = aResult[core::StratumWorker::kResult]) {
                     return result->GetBoolValue();
                 }
+            }else{
+                LOG(Error) << "Authorized error: " << error->GetValue();
+            }
+        }else{
+            if (auto result = aResult[core::StratumWorker::kResult]) {
+                return result->GetBoolValue();
             }
         }
 
@@ -71,24 +77,30 @@ public:
 		return true;
 	}
 
+    void ParseResult(const JSonVar &aResult) {
+        if (auto result = aResult[core::StratumWorker::kResult]) {
+            if (result->IsArray() && result->GetArrayLen() > 2){
+                std::string poolNonceStr = (*result)[1]->GetValue();
+                LOG(Info) << "get nonce prefix: " << poolNonceStr;
+                _worker.SetPoolNonce(poolNonceStr);
+            }
+        }
+
+        _worker.RemoteCall(new AuthorizeCall(_worker, _apiKey));
+    }
+
     bool OnResult(const JSonVar &aResult) override
 	{
         if (auto error = aResult[core::StratumWorker::kError]) {
 			if (error->IsNull()) {
-				if (auto result = aResult[core::StratumWorker::kResult]) {
-                    if (result->IsArray() && result->GetArrayLen() > 2){
-                        std::string poolNonceStr = (*result)[1]->GetValue();
-                        LOG(Info) << "get nonce prefix: " << poolNonceStr;
-                        _worker.SetPoolNonce(poolNonceStr);
-                    }
-                }
-
-                _worker.RemoteCall(new AuthorizeCall(_worker, _apiKey));
+                ParseResult(aResult);
                 return true;
             }
+        }else{
+            ParseResult(aResult);
         }
 
-        return false;
+        return true;
     }
 
 	void Serialize(std::string &aBuffer) const override
@@ -214,13 +226,10 @@ public:
 
 	bool OnCall(const JSonVar &aParams) override
 	{
-            LOG(Debug) << "new work";
         if (aParams.IsArray() && aParams.GetArrayLen() >= 9){
-            LOG(Debug) << "parse params";
             if (BeamWork::Ref work = new BeamWork()) {
                 auto id = aParams[(unsigned int)0];
                 work->_id = id->GetValue();
-        LOG(Debug) << "get work id" << work->_id;
                 if (auto input = aParams[2]) {
                     work->_input.Import(input->GetValue(), true);
                     work->_powDiff = static_cast<SlushpoolStratumWorker&>(_worker)._powDiff;

@@ -96,6 +96,7 @@ bool StratumWorker::Stop()
 	_exit = true;
 	_eventSync.Set();
 	_eventWork.Set();
+	_semAvailable.unlock();
 	if (_transport) {
 		_transport->Close();
 	}
