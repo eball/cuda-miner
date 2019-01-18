@@ -328,8 +328,8 @@ bool StratumWorker::OnDisconnected()
 	std::unique_lock<std::mutex> lock(_csOutput);
 	_outputCalls.clear();
 	_semAvailable.unlock();
-	_work.release();
-	_eventWork.Set();
+	//_work.release();
+	//_eventWork.Set();
 	return true;
 }
 
