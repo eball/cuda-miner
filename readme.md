@@ -7,12 +7,12 @@ Copyright 2018 The Beam Team
 # Usage
 ## One Liner Examples
 ```
-Linux: ./beam-cuda-miner --server <hostName>:<portNumer> --key <apiKey> --devices <deviceList>
-Windows: beam-cuda-miner --server <hostName>:<portNumer> --key <apiKey> --devices <deviceList>
+Linux: ./beam-cuda-miner --server | --pool <hostName>:<portNumer> --key <apiKey> --devices <deviceList>
+Windows: beam-cuda-miner --server | --pool <hostName>:<portNumer> --key <apiKey> --devices <deviceList>
 ```
 
 ## Parameters
-### --server 
+### --server | --pool (slushpool protocol)
 Passes the address and port of the node the miner will mine on to the miner.
 The server address can be an IP or any other valid server address.- For example when the node
 is running on the same computer and listens on port 17000 then use --server localhost:17000
